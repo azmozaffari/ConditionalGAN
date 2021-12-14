@@ -13,24 +13,6 @@ import torchvision.transforms.functional as TF
 import argparse
 
 
-class LeNet(nn.Module):
-    """ConvNet -> Max_Pool -> RELU -> ConvNet -> Max_Pool -> RELU -> FC -> RELU -> FC -> SOFTMAX"""
-    def __init__(self):
-        super(LeNet, self).__init__()
-        self.conv1 = nn.Conv2d(1, 20, 5, 1)
-        self.conv2 = nn.Conv2d(20, 50, 5, 1)
-        self.fc1 = nn.Linear(4*4*50, 500)
-        self.fc2 = nn.Linear(500, 10)
-
-    def forward(self, x):
-        x = F.relu(self.conv1(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = F.relu(self.conv2(x))
-        x = F.max_pool2d(x, 2, 2)
-        x = x.view(-1, 4*4*50)
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return F.log_softmax(x, dim=1)
 
 class Generator(nn.Module):
     def __init__(self, latent_dim=128):
@@ -80,97 +62,23 @@ def image_generator(output_folder,g_model,sum_num,latent_dim=128):
         count +=1
     save_image(img,output_folder+'/img_'+str(sum_num)+'_.jpg')
 
-
-
-   
-
-
-
     return img
-
-
-
-
-
-
-
-def select_mnist_img(label):
-    transform = transforms.Compose([
-                    transforms.Resize(28),
-                    transforms.ToTensor(),
-                    transforms.Normalize((0.5, ), (0.5, ))])
-
-
-    test_data = datasets.MNIST(
-                    root='../input/data',
-                    train=False,
-                    download=True,
-                    transform=transform
-    )
-
-    batch_size = 64
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=True)    
-
-    data = next(iter(test_loader))
-    img,lab = data
-    return(img[torch.where(lab == label)][0])
-
-
-
-
-
-
-
-
-def image_summation(output_folder,g_model,c_model,img,num,latent_dim):
-    
-    img = img.view(1,1,28,28)
-    label = torch.argmax(c_model(img))
-    sum_num = label.item() + num
-    print("the label of given image is =", label.item(), " the generated number should be "+str(num)+"+"+str(label.item())+"="+str(sum_num))
-
-    img = image_generator(output_folder,g_model,sum_num,latent_dim)
-    return img
-
-
-
-
-
 
 
 
 if __name__ == '__main__':  
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('--img_add', default='./test/img.jpg' ,help='path to img')
     parser.add_argument('--input_num', default=123 ,help='Alpha')
     #inputs
     #img_label must be between 0~9
     args = parser.parse_args()
-    img_add = args.img_add     
     input_num = int(args.input_num)
    
 
 
 
 
-
-
-
-    # input image : select the the image randomly with the same img_label from the test mnist dataset
-    
-    # input_img = select_mnist_img(img_label)   
-    # if not os.path.exists('./test/'):
-    #     os.makedirs('./test/') 
-    # save_image(input_img,'./test/img.jpg')
-
-    img = Image.open(img_add)
-    gray_image = ImageOps.grayscale(img)
-    input_img = TF.to_tensor(gray_image)
-
-
-
     # input number
-
     # generator model
     latent_dim = 128
     g_model = Generator(latent_dim)
@@ -178,8 +86,7 @@ if __name__ == '__main__':
     
  
 
-    c_model = LeNet()
-    c_model.load_state_dict(torch.load('./models/cmodel_50.pt'))
+   
 
     # output images will be saves in result folder
     output_folder = "./result"    
@@ -187,7 +94,7 @@ if __name__ == '__main__':
         shutil.rmtree(output_folder)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder) 
-
-    image_summation(output_folder,g_model,c_model,input_img,input_num,latent_dim)
+        
+    image_generator(output_folder,g_model,input_num,latent_dim)
     
 
